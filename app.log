@@ -1,0 +1,34 @@
+开始加载知识库（民法典 / 民事诉讼法 / 案例库与司法解释）...
+  civil.txt: 5562 字符 -> 15 个分片
+  民事诉讼法.txt: 34552 字符 -> 97 个分片
+  民法典.txt: 109513 字符 -> 286 个分片
+知识库切分完成，共 398 个分片
+开始加载向量模型...
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 33163.80it/s]
+向量模型加载完毕！
+构建FAISS向量库...
+FAISS向量库构建成功！
+Ollama qwen:7b加载完成！
+Flask服务启动：http://127.0.0.1:5000
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+127.0.0.1 - - [01/Oct/2026 15:44:44] "GET /history/fa9fc981-9c96-472c-b78f-a4be3a3130cf HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:44:45] "GET /history/fa9fc981-9c96-472c-b78f-a4be3a3130cf HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:44:49] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:44:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:44:55] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:44:58] "GET /history/fa9fc981-9c96-472c-b78f-a4be3a3130cf HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:45:02] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:45:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:45:20] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:46:41] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:46:43] "GET /history/59f6a4cb-b911-4c14-947e-9874aaf0378c HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:46:46] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:47:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:50:53] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:50:56] "GET /history/fa9fc981-9c96-472c-b78f-a4be3a3130cf HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:51:08] "GET /history HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 15:51:10] "GET / HTTP/1.1" 200 -

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>对话详情</title>
+    <style>
+        :root {
+            --primary: #1a5fae;
+            --primary-dark: #134b8a;
+            --bg: #f5f7fa;
+            --card: #fff;
+            --text: #2c3e50;
+            --muted: #7f8c9b;
+            --border: #e3e8ef;
+            --accent: #eef4fc;
+            --danger: #d64545;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding-bottom: 40px; }
+        .container { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+        header { background: linear-gradient(135deg, #1a5fae, #2b7fd0); color: #fff; padding: 24px 0; margin-bottom: 20px; }
+        header h1 { font-size: 24px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+        .btn-danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background: #fdecec; }
+
+        .conv-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, .05); overflow: hidden; }
+        .conv-title {
+            padding: 16px 20px;
+            background: #fbfcfe;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .conv-title strong { color: var(--text); font-size: 15px; }
+        .conv-body { padding: 20px; }
+        .turn { margin-bottom: 20px; }
+        .turn .q {
+            background: var(--accent);
+            border: 1px solid #d5e5f6;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14.5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .turn .q .tag { color: var(--primary-dark); font-weight: 600; margin-right: 6px; }
+        .turn .a {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 8px;
+            font-size: 14.5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .turn .a .tag { color: #2e7d32; font-weight: 600; margin-right: 6px; }
+        .turn .time { font-size: 12px; color: var(--muted); margin-top: 4px; text-align: right; }
+        .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container"><h1>💬 对话详情</h1></div>
+    </header>
+
+    <div class="container">
+        <div class="toolbar">
+            <div><a href="/history">← 返回历史记录</a></div>
+            <form method="post" action="/delete/{{ session_id }}" onsubmit="return confirm('确定删除这段对话吗？');">
+                <button type="submit" class="btn btn-danger">🗑 删除这段对话</button>
+            </form>
+        </div>
+
+        <div class="conv-card">
+            <div class="conv-title">共 <strong>{{ turns|length }}</strong> 轮对话 · 首条提问：<strong>{{ title }}</strong></div>
+            <div class="conv-body">
+                {% for t in turns %}
+                <div class="turn">
+                    <div class="q"><span class="tag">👤 问</span>{{ t.user_query }}</div>
+                    <div class="a"><span class="tag">🤖 答</span>{{ t.ai_answer }}</div>
+                    <div class="time">{{ t.create_time }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

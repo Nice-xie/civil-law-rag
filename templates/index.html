@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>民事诉讼代理辅助系统</title>
+    <style>
+        :root {
+            --primary: #1a5fae;
+            --primary-dark: #134b8a;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #7f8c9b;
+            --border: #e3e8ef;
+            --accent: #eef4fc;
+            --gold: #b8860b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: linear-gradient(135deg, #1a5fae 0%, #2b7fd0 100%);
+            color: #fff;
+            padding: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+            flex-shrink: 0;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; width: 100%; }
+        header h1 { font-size: 24px; font-weight: 600; }
+        header .subtitle { font-size: 13px; opacity: .88; margin-top: 4px; }
+        .nav { display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding: 10px 0 4px; font-size: 14px; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .chat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .05);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 160px);
+            min-height: 420px;
+            overflow: hidden;
+        }
+        .chat-head {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: #fbfcfe;
+        }
+        .chat-head .hint { font-size: 12px; font-weight: normal; color: var(--muted); }
+
+        .chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #fafbfd; }
+        .welcome {
+            background: var(--accent);
+            border: 1px dashed #bcd4ee;
+            border-radius: 10px;
+            padding: 16px 18px;
+            color: var(--primary-dark);
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .msg-row { display: flex; margin-bottom: 16px; }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.bot { justify-content: flex-start; }
+        .bubble {
+            max-width: 82%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            word-break: break-word;
+        }
+        .msg-row.user .bubble {
+            background: var(--primary);
+            color: #fff;
+            border-top-right-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .msg-row.bot .bubble {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-top-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+        }
+        .bubble-text { white-space: pre-wrap; }
+        .bubble .role-tag {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .loading { color: var(--muted); font-size: 14px; }
+
+        .sources { margin-top: 12px; border-top: 1px dashed #eee; padding-top: 10px; }
+        .src-title { font-size: 13px; color: var(--gold); font-weight: 600; margin-bottom: 8px; }
+        .src-item {
+            background: #fdfbf5;
+            border: 1px solid #efe3c2;
+            border-left: 4px solid var(--gold);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #5a4a1f;
+        }
+        .src-item .badge {
+            display: inline-block;
+            font-size: 11px;
+            background: var(--gold);
+            color: #fff;
+            padding: 1px 9px;
+            border-radius: 9px;
+            margin-bottom: 6px;
+        }
+
+        .chat-input {
+            border-top: 1px solid var(--border);
+            padding: 14px 16px;
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .chat-input textarea {
+            width: 100%;
+            min-height: 64px;
+            padding: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            resize: vertical;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .chat-input textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26, 95, 174, .12); }
+        .chat-actions { margin-top: 10px; display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
+        .btn {
+            display: inline-block;
+            padding: 9px 24px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+            font-family: inherit;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled { background: #9bb7d8; cursor: not-allowed; }
+        .btn-ghost { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-ghost:hover { background: var(--accent); }
+        .btn:active { transform: translateY(1px); }
+        .tip { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>⚖️ 基于 RAG 的民事诉讼代理辅助系统</h1>
+            <div class="subtitle">法律知识库智能检索 · 覆盖合同纠纷 / 交通事故 / 劳动纠纷等民事案件咨询</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="nav">
+            <a href="/stats">📊 数据大屏</a>
+            <a href="/mining">🔬 数据挖掘</a>
+            <a href="/pyecharts">🕸️ Pyecharts</a>
+            <a href="/history">📋 问答历史记录 →</a>
+        </div>
+
+        <div class="chat-card">
+            <div class="chat-head">
+                <span>💬 多轮法律咨询</span>
+                <span class="hint">可连续追问，点「结束查询」保存并开始新对话</span>
+            </div>
+            <div id="chatBox" class="chat-box">
+                <div class="welcome">👋 您好，我是民事诉讼智能辅助助手。<br>请输入法律问题开始咨询，回答下方会附上「检索溯源」的原文法条，证明答案来自知识库检索。</div>
+            </div>
+            <div class="chat-input">
+                <textarea id="qInput" placeholder="请输入法律问题（Enter 发送，Shift+Enter 换行）"></textarea>
+                <div class="chat-actions">
+                    <button id="endBtn" class="btn btn-ghost">🛑 结束查询</button>
+                    <button id="sendBtn" class="btn btn-primary">🔍 发送</button>
+                </div>
+                <div class="tip">提示：回答生成需要几秒到几十秒，请耐心等待；结束后可到「历史记录」查看完整对话。</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = genId();
+        let history = [];  // 当前对话 [{role, content}]
+        let sending = false;
+
+        function genId() {
+            return (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : 's' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        }
+
+        function el(tag, cls, text) {
+            const node = document.createElement(tag);
+            if (cls) node.className = cls;
+            if (text != null) node.textContent = text;
+            return node;
+        }
+
+        function appendMsg(role, text, sources) {
+            const box = document.getElementById('chatBox');
+            const row = el('div', 'msg-row ' + (role === 'user' ? 'user' : 'bot'));
+            const bubble = el('div', 'bubble');
+            const body = el('div', 'bubble-text', text);
+            bubble.appendChild(body);
+            if (sources && sources.length) {
+                const src = el('div', 'sources');
+                src.appendChild(el('div', 'src-title', '📚 检索溯源 · 参考法条原文'));
+                sources.forEach((s, i) => {
+                    const item = el('div', 'src-item');
+                    item.appendChild(el('span', 'badge', '参考法条 ' + (i + 1)));
+                    item.appendChild(el('div', '', s.content));
+                    src.appendChild(item);
+                });
+                bubble.appendChild(src);
+            }
+            row.appendChild(bubble);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function appendLoading() {
+            const box = document.getElementById('chatBox');
+            const row = el('div', 'msg-row bot');
+            const bubble = el('div', 'bubble');
+            bubble.appendChild(el('div', 'loading', '⏳ 正在检索知识库并生成回答…'));
+            row.appendChild(bubble);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+            return row;
+        }
+
+        async function send() {
+            const input = document.getElementById('qInput');
+            const q = input.value.trim();
+            if (!q || sending) return;
+            sending = true;
+            document.getElementById('sendBtn').disabled = true;
+            appendMsg('user', q);
+            input.value = '';
+            const loading = appendLoading();
+            try {
+                const resp = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, session_id: sessionId, history: history })
+                });
+                const data = await resp.json();
+                loading.remove();
+                if (data.error) {
+                    appendMsg('bot', data.error);
+                } else {
+                    appendMsg('bot', data.answer, data.sources);
+                    history.push({ role: 'user', content: q });
+                    history.push({ role: 'assistant', content: data.answer });
+                }
+            } catch (e) {
+                loading.remove();
+                appendMsg('bot', '网络或服务出错，请确认服务已启动后重试。');
+            }
+            sending = false;
+            document.getElementById('sendBtn').disabled = false;
+            input.focus();
+        }
+
+        function endSession() {
+            const box = document.getElementById('chatBox');
+            const hadChat = history.length > 0;
+            history = [];
+            sessionId = genId();
+            box.innerHTML = '';
+            box.appendChild(el('div', 'welcome',
+                hadChat
+                    ? '✅ 本次查询已结束并保存到历史记录。可继续输入问题开始新一轮咨询。'
+                    : '👋 您好，我是民事诉讼智能辅助助手。请输入法律问题开始咨询。'
+            ));
+            document.getElementById('qInput').value = '';
+            document.getElementById('qInput').focus();
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', send);
+        document.getElementById('endBtn').addEventListener('click', endSession);
+        document.getElementById('qInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+            }
+        });
+    </script>
+</body>
+</html>

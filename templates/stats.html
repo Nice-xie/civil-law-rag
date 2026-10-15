@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咨询数据分析大屏</title>
+    <style>
+        /* —— 深色大屏主题（色彩取自 dataviz 校验调色板 dark 档） —— */
+        :root {
+            --surface-1: #1a1a19;
+            --page: #0d0d0d;
+            --text-primary: #ffffff;
+            --text-secondary: #c3c2b7;
+            --text-muted: #898781;
+            --gridline: #2c2c2a;
+            --baseline: #383835;
+            --border: rgba(255, 255, 255, 0.10);
+            --accent: #2a78d6;
+            --series-1: #3987e5;
+            --series-2: #d95926;
+            --series-3: #199e70;
+            --series-4: #c98500;
+            --series-5: #d55181;
+            --series-6: #008300;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: var(--page);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 30px;
+        }
+        header {
+            background: linear-gradient(135deg, #0f2540 0%, #142f52 60%, #1a3a63 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        header h1 { font-size: 20px; font-weight: 600; letter-spacing: .5px; }
+        header .sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+        .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all .15s;
+        }
+        .nav a:hover { color: #fff; border-color: var(--accent); background: rgba(42, 120, 214, .15); }
+        .nav a.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+        .wrap { max-width: 1440px; margin: 0 auto; padding: 20px 24px; }
+
+        /* KPI 指标卡 */
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+        .kpi {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--accent);
+        }
+        .kpi .label { font-size: 13px; color: var(--text-secondary); }
+        .kpi .value {
+            font-size: 34px;
+            font-weight: 600;
+            margin-top: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+        .kpi .unit { font-size: 14px; color: var(--text-muted); font-weight: 400; margin-left: 2px; }
+
+        /* 图表网格 */
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+        .panel {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel .p-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+        .panel .p-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .panel .p-hint { font-size: 12px; color: var(--text-muted); }
+        .chart { width: 100%; flex: 1; min-height: 0; }
+        .p-bar { grid-column: span 5; height: 360px; }
+        .p-pie { grid-column: span 4; height: 360px; }
+        .p-cloud { grid-column: span 3; height: 360px; }
+        .p-line { grid-column: span 12; height: 320px; }
+
+        .empty-state {
+            background: var(--surface-1);
+            border: 1px dashed var(--baseline);
+            border-radius: 10px;
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .empty-state code {
+            background: #242423;
+            color: #86b6ef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .error-state { color: #e66767; }
+        @media (max-width: 900px) {
+            .kpis { grid-template-columns: repeat(2, 1fr); }
+            .p-bar, .p-pie, .p-cloud, .p-line { grid-column: span 12; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>📊 民事诉讼咨询数据分析大屏</h1>
+            <div class="sub">规则关键词分类 · 时间趋势 · 高频词云 · 多图表联动</div>
+        </div>
+        <div class="nav">
+            <a href="/">← 咨询首页</a>
+            <a href="/stats" class="on">数据大屏</a>
+            <a href="/mining">数据挖掘</a>
+            <a href="/pyecharts">Pyecharts</a>
+            <a href="/history">历史记录</a>
+        </div>
+    </header>
+
+    <div class="wrap" id="wrap">
+        <!-- 由 JS 渲染：空态 / 错误态 / 正常大屏 -->
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+    <script>
+        /* —— 分类固定配色（颜色跟随实体，不随筛选重排） —— */
+        const CAT_COLORS = {
+            '民间借贷': '#3987e5',
+            '婚约彩礼': '#d95926',
+            '劳动纠纷': '#199e70',
+            '合同纠纷': '#c98500',
+            '民事诉讼程序': '#d55181',
+            '其他': '#008300',
+        };
+        const TEXT_PRIMARY = '#ffffff', TEXT_SECONDARY = '#c3c2b7', TEXT_MUTED = '#898781';
+        const GRIDLINE = '#2c2c2a', BASELINE = '#383835';
+
+        const charts = {};   // 各图表实例，便于联动与自适应
+
+        function panel(id, title, hint) {
+            return '<div class="panel p-' + id + '">' +
+                '<div class="p-head"><span class="p-title">' + title + '</span>' +
+                '<span class="p-hint">' + hint + '</span></div>' +
+                '<div id="' + id + '" class="chart"></div></div>';
+        }
+
+        function kpiHtml(label, id, unit) {
+            return '<div class="kpi"><div class="label">' + label + '</div>' +
+                '<div class="value" id="' + id + '">—</div><span class="unit">' + unit + '</span></div>';
+        }
+
+        function tooltip() {
+            return {
+                backgroundColor: 'rgba(20,20,20,0.94)',
+                borderColor: GRIDLINE,
+                textStyle: { color: TEXT_SECONDARY, fontSize: 12 },
+            };
+        }
+
+        function initChart(id) {
+            const el = document.getElementById(id);
+            const c = echarts.init(el);
+            charts[id] = c;
+            return c;
+        }
+
+        function setKpi(id, v) { document.getElementById(id).textContent = v; }
+
+        /* 用 ECharts 深色通用样式 */
+        function axisCommon() {
+            return {
+                axisLine: { lineStyle: { color: BASELINE } },
+                axisLabel: { color: TEXT_MUTED, fontSize: 11 },
+                splitLine: { lineStyle: { color: GRIDLINE, type: 'dashed' } },
+            };
+        }
+
+        function render(data) {
+            const total = data.total;
+            const cats = data.categories;           // [{name, value}]
+            const trend = data.trend;               // [{date, category, value}]
+            const keywords = data.keywords;         // [{name, value}]
+            const catKw = data.category_keywords;   // {cat: [{name,value}]}
+
+            const named = cats.filter(c => c.value > 0);
+            const activeCount = named.length;
+            const today = new Date();
+            const todayStr = today.getFullYear() + '-' +
+                String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                String(today.getDate()).padStart(2, '0');
+            const todayTotal = trend.filter(t => t.date === todayStr).reduce((s, t) => s + t.value, 0);
+            const topCat = named.length ? named.reduce((a, b) => a.value >= b.value ? a : b).name : '—';
+
+            // KPI
+            setKpi('k-total', total);
+            setKpi('k-cats', activeCount);
+            setKpi('k-today', todayTotal);
+            setKpi('k-top', topCat);
+
+            const names = cats.map(c => c.name);
+            const values = cats.map(c => c.value);
+
+            // 1. 分类分布柱状图（直接标注数值，点击联动词云）
+            const bar = initChart('bar');
+            bar.setOption({
+                backgroundColor: 'transparent',
+                tooltip: Object.assign(tooltip(), { trigger: 'axis' }),
+                grid: { left: 8, right: 20, top: 30, bottom: 8, containLabel: true },
+                xAxis: Object.assign(axisCommon(), {
+                    type: 'category',
+                    data: names,
+                    axisLabel: { color: TEXT_SECONDARY, fontSize: 12, interval: 0 },
+                    axisTick: { show: false },
+                }),
+                yAxis: Object.assign(axisCommon(), { type: 'value' }),
+                series: [{
+                    name: '咨询量',
+                    type: 'bar',
+                    data: values.map((v, i) => ({
+                        value: v,
+                        itemStyle: { color: CAT_COLORS[names[i]], borderRadius: [4, 4, 0, 0] },
+                    })),
+                    barMaxWidth: 42,
+                    label: { show: true, position: 'top', color: TEXT_SECONDARY, fontSize: 12 },
+                }],
+            });
+
+            // 2. 分类占比饼图（直接标注，不单靠颜色辨识）
+            const pie = initChart('pie');
+            pie.setOption({
+                backgroundColor: 'transparent',
+                tooltip: Object.assign(tooltip(), { trigger: 'item', formatter: '{b}: {c} 条 ({d}%)' }),
+                legend: {
+                    bottom: 0, textStyle: { color: TEXT_SECONDARY, fontSize: 11 },
+                    itemWidth: 10, itemHeight: 10,
+                },
+                series: [{
+                    name: '分类占比',
+                    type: 'pie',
+                    radius: ['42%', '68%'],
+                    center: ['50%', '45%'],
+                    data: named.map(c => ({ name: c.name, value: c.value, itemStyle: { color: CAT_COLORS[c.name] } })),
+                    label: {
+                        color: TEXT_PRIMARY, fontSize: 12,
+                        formatter: '{b}\n{c} 条',
+                    },
+                    labelLine: { lineStyle: { color: TEXT_MUTED } },
+                    itemStyle: { borderColor: '#1a1a19', borderWidth: 2 },
+                }],
+            });
+
+            // 3. 高频词云（全局）
+            const cloud = initChart('cloud');
+            function cloudOption(words) {
+                return {
+                    backgroundColor: 'transparent',
+                    tooltip: Object.assign(tooltip(), { formatter: function (p) { return p.name + '：' + p.value + ' 次'; } }),
+                    series: [{
+                        type: 'wordCloud',
+                        shape: 'circle',
+                        left: 'center', top: 'center',
+                        width: '96%', height: '92%',
+                        sizeRange: [14, 46],
+                        rotationRange: [0, 0],
+                        gridSize: 8,
+                        drawOutOfBound: false,
+                        textStyle: {
+                            fontFamily: 'Microsoft YaHei, sans-serif',
+                            fontWeight: 500,
+                            color: '#86b6ef',   // 单一浅蓝墨色，词频由字号大小编码
+                        },
+                        data: words,
+                    }],
+                };
+            }
+            cloud.setOption(cloudOption(keywords));
+
+            // 4. 时间趋势折线（按分类多序列）
+            const line = initChart('line');
+            const dateSet = [];
+            trend.forEach(t => { if (dateSet.indexOf(t.date) < 0) dateSet.push(t.date); });
+            dateSet.sort();
+            const byDate = {};
+            trend.forEach(t => {
+                (byDate[t.date] = byDate[t.date] || {})[t.category] = t.value;
+            });
+            const series = names.map(n => ({
+                name: n,
+                type: 'line',
+                smooth: true,
+                symbolSize: 6,
+                lineStyle: { width: 2, color: CAT_COLORS[n] },
+                itemStyle: { color: CAT_COLORS[n] },
+                data: dateSet.map(d => (byDate[d] && byDate[d][n]) || 0),
+            }));
+            line.setOption({
+                backgroundColor: 'transparent',
+                tooltip: Object.assign(tooltip(), { trigger: 'axis' }),
+                legend: { top: 0, textStyle: { color: TEXT_SECONDARY, fontSize: 11 }, itemWidth: 14, itemHeight: 8 },
+                grid: { left: 8, right: 20, top: 36, bottom: 8, containLabel: true },
+                xAxis: Object.assign(axisCommon(), {
+                    type: 'category', boundaryGap: false, data: dateSet,
+                    axisLabel: { color: TEXT_MUTED, fontSize: 11 },
+                }),
+                yAxis: Object.assign(axisCommon(), { type: 'value', minInterval: 1 }),
+                series: series,
+            });
+
+            // —— 多图表联动：点击柱状图 → 词云切换为该分类高频词 ——
+            const cloudHint = document.getElementById('cloudHint');
+            bar.off('click');
+            bar.on('click', function (p) {
+                const cat = p.name;
+                if (!cat) {  // 点击空白/坐标轴，恢复全局词云
+                    cloud.setOption(cloudOption(keywords));
+                    cloudHint.textContent = '点击柱状图可切换该分类的高频词';
+                    return;
+                }
+                const words = catKw[cat] || [];
+                cloud.setOption(cloudOption(words.length ? words : [{ name: '暂无', value: 1 }]));
+                cloudHint.textContent = '当前联动：' + cat + ' 分类高频词（点击空白恢复全局）';
+            });
+        }
+
+        function renderEmpty() {
+            document.getElementById('wrap').innerHTML =
+                '<div class="empty-state">' +
+                '<h3 style="margin-bottom:10px">暂无咨询数据</h3>' +
+                '<p>数据库 chat_history 表为空，请先到首页提问，或运行 <code>python seed_data.py</code> 灌入演示数据后刷新本页。</p>' +
+                '</div>';
+        }
+
+        function renderError(msg) {
+            document.getElementById('wrap').innerHTML =
+                '<div class="empty-state error-state">' +
+                '<h3 style="margin-bottom:10px">加载失败</h3><p>' + msg + '</p></div>';
+        }
+
+        async function load() {
+            const wrap = document.getElementById('wrap');
+            try {
+                const resp = await fetch('/stats/api');
+                if (!resp.ok) {
+                    let detail = '';
+                    try { detail = (await resp.json()).detail || ''; } catch (e) {}
+                    renderError('接口返回 ' + resp.status + ' ' + detail);
+                    return;
+                }
+                const data = await resp.json();
+                if (!data || !data.total) { renderEmpty(); return; }
+
+                wrap.innerHTML =
+                    '<div class="kpis">' +
+                    kpiHtml('总提问数', 'k-total', '条') +
+                    kpiHtml('咨询类别数', 'k-cats', '类') +
+                    kpiHtml('今日提问', 'k-today', '条') +
+                    kpiHtml('高频类别', 'k-top', '') +
+                    '</div>' +
+                    '<div class="grid">' +
+                    panel('bar', '分类分布', '点击柱形联动词云') +
+                    panel('pie', '分类占比', '') +
+                    panel('cloud', '高频词云', '<span id="cloudHint">点击柱状图切换分类</span>') +
+                    panel('line', '咨询量时间趋势', '按日期 × 分类') +
+                    '</div>';
+
+                render(data);
+                window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
+            } catch (e) {
+                renderError('网络或服务出错：' + e.message);
+            }
+        }
+
+        load();
+    </script>
+</body>
+</html>

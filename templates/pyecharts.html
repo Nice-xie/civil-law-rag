@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyecharts 交互式可视化</title>
+    <!-- Pyecharts render_embed() 生成的内联脚本会在解析时立即调用 echarts.init，故必须在 head 先加载 echarts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a5fae;
+            --bg: #f5f7fa;
+            --card: #fff;
+            --text: #2c3e50;
+            --muted: #7f8c9b;
+            --border: #e3e8ef;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding-bottom: 40px; }
+        .container { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+        header { background: linear-gradient(135deg, #1a5fae, #2b7fd0); color: #fff; padding: 24px 0; margin-bottom: 20px; }
+        header h1 { font-size: 22px; }
+        header .sub { font-size: 13px; opacity: .88; margin-top: 4px; }
+        .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .nav a { color: var(--primary); text-decoration: none; font-size: 13px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+        .nav a:hover { background: #eef4fc; }
+        .nav a.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+        .card .label { font-size: 12.5px; color: var(--muted); }
+        .card .value { font-size: 26px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+        .panel h2 { font-size: 16px; margin-bottom: 14px; color: #40536b; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 800px) { .cards { grid-template-columns: 1fr; } .grid2 { grid-template-columns: 1fr; } }
+
+        .empty { background: var(--card); border: 1px dashed var(--border); border-radius: 10px; padding: 48px 24px; text-align: center; color: var(--muted); }
+        .empty code { background: #f0f4f9; color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🕸️ Pyecharts 交互式可视化</h1>
+            <div class="sub">雷达图 · 仪表盘 · 漏斗图（服务端 Pyecharts 渲染，前端 ECharts 交互）</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="nav">
+            <a href="/">← 咨询首页</a>
+            <a href="/stats">数据大屏</a>
+            <a href="/mining">数据挖掘</a>
+            <a href="/pyecharts" class="on">Pyecharts</a>
+            <a href="/history">历史记录</a>
+        </div>
+
+        {% if charts.empty %}
+        <div class="empty">
+            <h3 style="margin-bottom:10px">暂无数据</h3>
+            <p>数据库 chat_history 表为空，请先到首页提问，或运行 <code>python seed_data.py</code> 灌入演示数据后刷新本页。</p>
+        </div>
+        {% else %}
+        <div class="cards">
+            <div class="card"><div class="label">咨询总量</div><div class="value">{{ stats.total }} 条</div></div>
+            <div class="card"><div class="label">涉及类别</div><div class="value">{{ stats.categories | selectattr('value', 'gt', 0) | list | length }} 类</div></div>
+            <div class="card"><div class="label">高频词数量</div><div class="value">{{ stats.keywords | length }} 个</div></div>
+        </div>
+
+        <div class="panel">
+            <h2>雷达图 · 各分类咨询分布对比</h2>
+            {{ charts.radar | safe }}
+        </div>
+
+        <div class="grid2">
+            <div class="panel">
+                <h2>仪表盘 · 咨询总量</h2>
+                {{ charts.gauge | safe }}
+            </div>
+            <div class="panel">
+                <h2>漏斗图 · 分类占比</h2>
+                {{ charts.funnel | safe }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# 民事诉讼代理辅助系统依赖（Python 3.12 已验证）
+
+# Web 框架
+flask==3.1.2
+
+# LangChain 生态（向量库 FAISS / LLM Ollama / 向量模型 HuggingFaceEmbeddings）
+langchain-community==0.0.38
+langchain-core==0.1.53
+langchain-text-splitters==0.0.2
+
+# 向量检索
+faiss-cpu==1.15.1
+
+# 中文向量模型（bge-base-zh-v1.5，依赖 torch，首次运行会自动下载）
+sentence-transformers==6.1.0
+
+# MySQL 数据库
+pymysql==1.1.2
+
+# ============ 数据分析 / 数据挖掘 / 可视化 ============
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+matplotlib==3.9.2
+jieba==0.42.1
+pyecharts==2.0.6

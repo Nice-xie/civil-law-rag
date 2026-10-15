@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答历史记录</title>
+    <style>
+        :root {
+            --primary: #1a5fae;
+            --bg: #f5f7fa;
+            --card: #fff;
+            --text: #2c3e50;
+            --muted: #7f8c9b;
+            --border: #e3e8ef;
+            --danger: #d64545;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 40px; }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+        header { background: linear-gradient(135deg, #1a5fae, #2b7fd0); color: #fff; padding: 24px 0; margin-bottom: 20px; }
+        header h1 { font-size: 24px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .toolbar .left { font-size: 14px; color: var(--muted); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+        .btn-danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background: #fdecec; }
+        .btn-del { background: #fff; color: var(--danger); border: 1px solid #e8c4c4; padding: 4px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+        .btn-del:hover { background: #fdecec; }
+        .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; box-shadow: 0 1px 4px rgba(0, 0, 0, .04); }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        th, td { border-bottom: 1px solid var(--border); padding: 12px 14px; vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
+        th { background: #f0f4f9; font-weight: 600; font-size: 14px; color: #40536b; }
+        td { font-size: 13.5px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8fafc; }
+        .col-id { width: 56px; }
+        .col-title { width: auto; }
+        .col-turns { width: 90px; text-align: center; }
+        .col-time { width: 170px; }
+        .col-op { width: 90px; text-align: center; }
+        .title-link { font-weight: 600; }
+        .turns-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 10px;
+        }
+        .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        .pagination a, .pagination span { padding: 7px 13px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font-size: 14px; color: var(--text); }
+        .pagination a:hover { background: var(--primary); color: #fff; border-color: var(--primary); text-decoration: none; }
+        .pagination .current { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+        .pagination .disabled { color: #c3cad3; cursor: not-allowed; }
+        .info { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container"><h1>📋 问答历史记录</h1></div>
+    </header>
+
+    <div class="container">
+        <div class="toolbar">
+            <div class="left"><a href="/">← 返回系统首页</a>
+                &nbsp;·&nbsp; <a href="/stats">📊 数据大屏</a>
+                &nbsp;·&nbsp; <a href="/mining">🔬 数据挖掘</a>
+                &nbsp;·&nbsp; <a href="/pyecharts">🕸️ Pyecharts</a>
+                &nbsp;·&nbsp; 共 {{ total }} 段对话</div>
+            <form method="post" action="/clear_history" onsubmit="return confirm('确定要清空全部历史记录吗？此操作不可恢复。');">
+                <button type="submit" class="btn btn-danger">🗑 清空全部记录</button>
+            </form>
+        </div>
+
+        {% if conversations %}
+        <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col class="col-id">
+                    <col class="col-title">
+                    <col class="col-turns">
+                    <col class="col-time">
+                    <col class="col-op">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>对话内容（首条提问）</th>
+                        <th>轮次</th>
+                        <th>最后时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in conversations %}
+                    <tr>
+                        <td>{{ loop.index + (page - 1) * per_page }}</td>
+                        <td>
+                            <a class="title-link" href="/history/{{ c.session_id }}">{{ c.title }}</a>
+                            <div style="font-size:12px;color:var(--muted);margin-top:2px;">点击查看完整对话</div>
+                        </td>
+                        <td style="text-align:center;"><span class="turns-badge">{{ c.turns }} 轮</span></td>
+                        <td>{{ c.last_time }}</td>
+                        <td style="text-align:center;">
+                            <form method="post" action="/delete/{{ c.session_id }}" onsubmit="return confirm('确定删除这段对话吗？');">
+                                <button type="submit" class="btn-del">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/history?page={{ page - 1 }}&per_page={{ per_page }}">‹ 上一页</a>
+            {% else %}
+            <span class="disabled">‹ 上一页</span>
+            {% endif %}
+
+            {% for p in page_items %}
+                {% if p == '...' %}
+                <span class="disabled">…</span>
+                {% elif p == page %}
+                <span class="current">{{ p }}</span>
+                {% else %}
+                <a href="/history?page={{ p }}&per_page={{ per_page }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <a href="/history?page={{ page + 1 }}&per_page={{ per_page }}">下一页 ›</a>
+            {% else %}
+            <span class="disabled">下一页 ›</span>
+            {% endif %}
+        </div>
+        <div class="info">第 {{ page }} / {{ total_pages }} 页 · 每页 {{ per_page }} 段</div>
+        {% endif %}
+
+        {% else %}
+        <div class="table-wrap"><div class="empty">暂无历史记录，快去首页提问吧～</div></div>
+        {% endif %}
+    </div>
+</body>
+</html>
